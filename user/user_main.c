@@ -11,11 +11,16 @@
 #include "commonservices.h"
 #include "vars.h"
 #include <mdns.h>
+#include "flip7seg.h"
+#include "sntp.h"
+#include "time.h"
+#include "clock.h"
 
 #define procTaskPrio        0
 #define procTaskQueueLen    1
 
 static volatile os_timer_t some_timer;
+static volatile os_timer_t seg7update_timer;
 static struct espconn *pUdpServer;
 usr_conf_t * UsrCfg = (usr_conf_t*)(SETTINGS.UserData);
 
@@ -52,7 +57,12 @@ static void ICACHE_FLASH_ATTR procTask(os_event_t *events)
 //Timer event.
 static void ICACHE_FLASH_ATTR myTimer(void *arg)
 {
-	CSTick( 1 ); // Send a one to uart
+	CSTick( 1 ); // handle internal ticks 
+}
+
+static void ICACHE_FLASH_ATTR update7segTimer(void *arg)
+{
+	clock_tick();
 }
 
 
@@ -74,13 +84,20 @@ void user_init(void)
 {
 	uart_init(BIT_RATE_115200, BIT_RATE_115200);
 
-	uart0_sendStr("\r\nesp82XX Web-GUI\r\n" VERSSTR "\b");
+	uart0_sendStr("\r\nesp8266 7flip Web-GUI\r\n" VERSSTR "\b");
 
 //Uncomment this to force a system restore.
 //	system_restore();
 
 	CSSettingsLoad( 0 );
 	CSPreInit();
+
+	flip7seg_init();
+	set7force(1, 0);
+	set7force(2, 0);
+	set7force(3, 0);
+	set7force(4, 0);
+	do_display_text("wifi",4,0);
 
     pUdpServer = (struct espconn *)os_zalloc(sizeof(struct espconn));
 	ets_memset( pUdpServer, 0, sizeof( struct espconn ) );
@@ -95,13 +112,15 @@ void user_init(void)
 		while(1) { uart0_sendStr( "\r\nFAULT\r\n" ); }
 	}
 
+	start_ntp_clock();
+
 	CSInit();
 
 	SetServiceName( "espcom" );
 	AddMDNSName(    "esp82xx" );
-	AddMDNSName(    "espcom" );
+	//AddMDNSName(    "espcom" );
 	AddMDNSService( "_http._tcp",    "An ESP82XX Webserver", WEB_PORT );
-	AddMDNSService( "_espcom._udp",  "ESP82XX Comunication", COM_PORT );
+	//AddMDNSService( "_espcom._udp",  "ESP82XX Comunication", COM_PORT );
 	AddMDNSService( "_esp82xx._udp", "ESP82XX Backend",      BACKEND_PORT );
 
 	//Add a process
@@ -112,7 +131,12 @@ void user_init(void)
 	os_timer_setfn(&some_timer, (os_timer_func_t *)myTimer, NULL);
 	os_timer_arm(&some_timer, 100, 1);
 
+	os_timer_disarm(&seg7update_timer);
+	os_timer_setfn(&seg7update_timer, update7segTimer, NULL);
+	os_timer_arm(&seg7update_timer, 2000, 1);
+
 	printf( "Boot Ok.\n" );
+	do_shift_latch(0b01010100);
 
 	wifi_set_sleep_type(LIGHT_SLEEP_T);
 	wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);

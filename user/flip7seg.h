@@ -1,9 +1,21 @@
-#include <stdint.h>
 
-// pin numbers for nano
-#define latchPin 8
-#define clockPin 7
-#define dataPin 11
+#include <c_types.h>
+#include <osapi.h>
+#include <c_types.h>
+#include <mem.h>
+#include <ets_sys.h>
+#include <gpio.h>
+#include <os_type.h>
+#include <user_interface.h>
+
+#ifndef _FLIP7SEG_H_
+#define _FLIP7SEG_H_
+
+
+#define dataPinNo  5
+#define clockPinNo 4
+#define latchPinNo 2
+
 
 #define DR _BV(0)
 #define RA0 _BV(1)
@@ -54,8 +66,17 @@
 #define LET4 (0|CA1|CA0)
 #define LET5 (0|CA2)
 
+void flip7seg_init();
+
+
+void do_shift_latch(uint8_t data);
 uint8_t to7Segment(char character);
 uint8_t do_7seg_to_dot(uint8_t pattern, uint8_t cache, uint8_t letter);
 void do_set_all(uint8_t onoff, uint8_t letter);
+
 void do_number_to_7seg(const int number);
+
 void do_display_text(char *str, uint8_t len, uint8_t offset);
+void set7c(uint8_t letter, uint8_t pattern);
+
+#endif //_FLIP7SEG_H_

@@ -9,21 +9,104 @@
 #include <user_interface.h>
 
 #include "flip7seg.h"
+#include "esp82xxutil.h"
 
 static uint8_t cache[5];
+int f7_bitdelayH_us;
+int f7_bitdelayL_us;
+int f7_latchdelay_us;
 
-void flip7seg_init()
+void do_segment(uint8_t seg, uint8_t letter, uint8_t onoff);
+void do_shift_latch(uint8_t data);
+
+void ICACHE_FLASH_ATTR flip7seg_init()
 {
-    pinMode(13, OUTPUT); //LED
-    pinMode(latchPin, OUTPUT);
-    pinMode(clockPin, OUTPUT);
-    pinMode(dataPin, OUTPUT);
-    digitalWrite(latchPin, LOW);
+    gpio_init();
 
-    do_shift_latch(0b00000000);
+    f7_bitdelayH_us = 0;
+    f7_bitdelayL_us = 0;
+    f7_latchdelay_us = 5*1000;
+
+    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_GPIO0);
+    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
+    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO9);
+    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_GPIO10);
+    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO14);
+    
+    //	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_I2SO_WS);
+    //	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_I2SO_BCK);
+
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
+
+    //Set GPIO2 low
+    gpio_output_set(0, BIT2, BIT2, 0);
+
+    //GPIO_OUTPUT_SET(GPIO_ID_PIN(0), 0);
+    GPIO_OUTPUT_SET(GPIO_ID_PIN(4), 0);
+    GPIO_OUTPUT_SET(GPIO_ID_PIN(5), 0);
+    gpio_output_set(0, (1<<latchPinNo)|(1<<dataPinNo)|(1<<clockPinNo), 0, 0); //set low
+
+    //pinMode(13, OUTPUT); //LED
+    //pinMode(latchPin, OUTPUT);
+    //pinMode(clockPin, OUTPUT);
+    //pinMode(dataPin, OUTPUT);
+    //digitalWrite(latchPin, LOW);
+
+    //do_shift_latch(0b00000000);
 }
 
-uint8_t to7Segment(char character)
+void ICACHE_FLASH_ATTR shiftOut(const uint8_t dataPin, const uint8_t clockPin, uint8_t data) {
+    //gpio_output_set(0, (1 << pin), 0, 0); //set low
+    int i;
+    for (i=0; i<8; i++) {
+        if ((1 & data)==0x01)
+            gpio_output_set((1 << dataPin), 0, 0, 0);// set high
+        else
+            gpio_output_set(0, (1 << dataPin), 0, 0); //set low
+        //toggle clock
+        gpio_output_set((1 << clockPin), 0, 0, 0);// set high
+        os_delay_us(f7_bitdelayH_us);
+        gpio_output_set(0, (1 << clockPin), 0, 0); //set low
+        os_delay_us(f7_bitdelayL_us);
+        data >>= 1;
+        // expression
+    }
+}
+
+void ICACHE_FLASH_ATTR do_shift_latch(uint8_t data)
+{
+    gpio_output_set(0, (1 << latchPinNo), (1 << latchPinNo), 0); //set low
+    shiftOut(dataPinNo, clockPinNo, data);
+    gpio_output_set((1 << latchPinNo), 0, (1 << latchPinNo), 0);// set high
+    //os_delay_us(50);
+    os_delay_us(f7_latchdelay_us);
+    gpio_output_set(0, (1 << latchPinNo), (1 << latchPinNo), 0); //set low
+}
+
+void ICACHE_FLASH_ATTR do_segment(uint8_t seg, uint8_t letter, uint8_t onoff)
+{
+    uint8_t dat = 0;
+    // C2 C1 C0 DC R2 R1 R0 DR (lsb)
+    if (onoff)
+        dat |= DR;
+    else
+        dat |= DC;
+    dat |= (letter & 0x07) << 5;
+    dat |= (seg & 0x07) << 1;
+    //do_shift_latch(dat);
+    gpio_output_set(0, (1 << latchPinNo), 0, 0); //set low
+
+    shiftOut(dataPinNo, clockPinNo, dat);
+    gpio_output_set((1 << latchPinNo), 0, 0, 0);// set high
+
+    //delay(5);
+    os_delay_us(f7_latchdelay_us);
+    gpio_output_set(0, (1 << latchPinNo), 0, 0); //set low
+}
+
+uint8_t ICACHE_FLASH_ATTR to7Segment(char character)
 {
     uint8_t bits;
     if (character >= 'A' && character <= 'Z')
@@ -185,12 +268,6 @@ uint8_t to7Segment(char character)
     case '\'':
         bits = 0b00000010;
         break;
-    case '´':
-        bits = 0b00000110;
-        break;
-    case '`':
-        bits = 0b00001100;
-        break;
     case '!':
         bits = 0b10001000;
         break;
@@ -216,7 +293,7 @@ uint8_t to7Segment(char character)
     return bits;
 }
 
-uint8_t do_7seg_to_dot(uint8_t pattern, uint8_t cache, uint8_t letter)
+uint8_t ICACHE_FLASH_ATTR do_7seg_to_dot(uint8_t pattern, uint8_t cache, uint8_t letter)
 {
     if (cache == pattern)
         return pattern;
@@ -224,27 +301,24 @@ uint8_t do_7seg_to_dot(uint8_t pattern, uint8_t cache, uint8_t letter)
     uint8_t changes = cache ^ pattern;
 
     if (changes | _BV(0))
-        do_segment2(SEG_G, letter, (pattern & _BV(0)));
+        do_segment(SEG_G, letter, (pattern & _BV(0)));
     if (changes | _BV(1))
-        do_segment2(SEG_F, letter, (pattern & _BV(1)));
+        do_segment(SEG_F, letter, (pattern & _BV(1)));
     if (changes | _BV(2))
-        do_segment2(SEG_A, letter, (pattern & _BV(2)));
+        do_segment(SEG_A, letter, (pattern & _BV(2)));
     if (changes | _BV(3))
-        do_segment2(SEG_B, letter, (pattern & _BV(3)));
+        do_segment(SEG_B, letter, (pattern & _BV(3)));
     if (changes | _BV(4))
-        do_segment2(SEG_E, letter, (pattern & _BV(4)));
+        do_segment(SEG_E, letter, (pattern & _BV(4)));
     if (changes | _BV(5))
-        do_segment2(SEG_D, letter, (pattern & _BV(5)));
+        do_segment(SEG_D, letter, (pattern & _BV(5)));
     if (changes | _BV(6))
-        do_segment2(SEG_C, letter, (pattern & _BV(6)));
+        do_segment(SEG_C, letter, (pattern & _BV(6)));
     return pattern;
 }
 
-void do_set_all(uint8_t onoff, uint8_t letter)
+void ICACHE_FLASH_ATTR do_set_all(uint8_t onoff, uint8_t letter)
 {
-    //for(uint8_t seg=0; seg<7; seg++){
-    //  do_segment(seg, letter, onoff);
-    //}
     uint8_t dat = letter;
     if (onoff)
         dat |= DR;
@@ -259,12 +333,13 @@ void do_set_all(uint8_t onoff, uint8_t letter)
     do_shift_latch(dat | SAG);
 }
 
-void do_number_to_7seg(const int number)
+void ICACHE_FLASH_ATTR do_number_to_7seg(const int number)
 {
     int tmp = number;
 
     cache[1] = do_7seg_to_dot(to7Segment(tmp % 10), cache[1], 1);
-    for (int i = 2; i < 5; i++)
+    int i;
+    for (i = 2; i < 5; i++)
     {
         tmp = tmp / 10;
         if (tmp)
@@ -274,13 +349,22 @@ void do_number_to_7seg(const int number)
     }
 }
 
-void do_display_text(char *str, uint8_t len, uint8_t offset)
+void ICACHE_FLASH_ATTR do_display_text(char *str, uint8_t len, uint8_t offset)
 {
-    for (int i = 1; i <= 5; i++)
+    int i;
+    for (i = 1; i <= 5; i++)
     {
-        cache[i] = do_7seg_to_dot((len > (offset + 4 - i)) ? to7Segment(str[offset + 4 - i]) : 0, cache[i], i);
+        //cache[i] = do_7seg_to_dot((len > (offset + 4 - i)) ? to7Segment(str[offset + 4 - i]) : 0, cache[i], i);
+        set7c(i, (len > (offset + 4 - i)) ? to7Segment(str[offset + 4 - i]) : 0);
     }
 }
 
-#define set7c(letter, pattern) cache[letter] = do_7seg_to_dot(pattern, cache[letter], letter);
-#define set7force(letter, pattern) cache[letter] = do_7seg_to_dot(pattern, !pattern, letter);
+void ICACHE_FLASH_ATTR set7c(uint8_t letter, uint8_t pattern){
+    cache[letter] = do_7seg_to_dot(pattern, cache[letter], letter);
+}
+void ICACHE_FLASH_ATTR set7force(uint8_t letter, uint8_t pattern){
+    cache[letter] = do_7seg_to_dot(pattern, !pattern, letter);
+}
+
+//#define set7c(letter, pattern) cache[letter] = do_7seg_to_dot(pattern, cache[letter], letter);
+//#define set7force(letter, pattern) cache[letter] = do_7seg_to_dot(pattern, !pattern, letter);
