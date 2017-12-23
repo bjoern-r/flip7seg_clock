@@ -48,7 +48,6 @@ int ICACHE_FLASH_ATTR clock_update_7seg(enum date_time_e show_what)
     {
         t = sntp_localtime(&tim);
         printf("localtime ok, show_what: %d\n",show_what);
-        //printf("NTP Time: %02d:%02d:%02d %02d.%02d.%04d (%d)sec\r\n", t->tm_hour, t->tm_min, t->tm_sec, t->tm_mday, t->tm_mon , t->tm_year + 1900, tim);
         dates = sntp_asctime(t);
         //Sat Dec 16 15:14:37 2017 -> len=24
         //0   3
@@ -57,14 +56,12 @@ int ICACHE_FLASH_ATTR clock_update_7seg(enum date_time_e show_what)
         printf("  %s",dates);
         switch (show_what){
             case SHOW_HH_MM:
-                //do_number_to_7seg(t->tm_hour * 100 + t->tm_min);
                 os_sprintf(buf, "%2d%02d", t->tm_hour, (t->tm_min));
                 do_display_text(buf,4,0);
                 break;
             case SHOW_MM_SS:
                 os_sprintf(buf, "%02d%02d", t->tm_min, t->tm_sec);
                 do_display_text(buf,4,0);
-                //do_number_to_7seg(t->tm_min * 100 + t->tm_sec);
                 break;
             case SHOW_YYYY:
                 do_number_to_7seg(t->tm_year + 1900);

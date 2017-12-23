@@ -11,7 +11,7 @@
 #include "flip7seg.h"
 #include "esp82xxutil.h"
 
-static uint8_t cache[5];
+uint8_t cache[5];
 int f7_bitdelayH_us;
 int f7_bitdelayL_us;
 int f7_latchdelay_us;
@@ -123,7 +123,7 @@ uint8_t ICACHE_FLASH_ATTR to7Segment(char character)
   6   4
   6   4
    777
-  3   5
+  3   1
   3   1
    222  0
    
@@ -132,14 +132,14 @@ uint8_t ICACHE_FLASH_ATTR to7Segment(char character)
     switch (character)
     {
     case 0:
-        bits = 0b01111110;
+        bits = 0b01111110; //0x7e
         break;
     case 1:
-        bits = 0b01001000;
+        bits = 0b01001000; //0x48
         break;
     case 2:
     case 'z':
-        bits = 0b00111101;
+        bits = 0b00111101; //0x3d
         break;
     case 3:
         bits = 0b01101101;

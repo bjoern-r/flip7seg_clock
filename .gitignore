@@ -1,3 +1,9 @@
 .vscode
 *.bin
 image.elf
+web/tmp
+web/tmp2
+web/execute_reflash
+web/mfsmaker
+web/page.mpfs
+web/pushtodev

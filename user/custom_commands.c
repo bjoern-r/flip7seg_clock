@@ -7,7 +7,10 @@
 #include <sntp.h>
 #include "clock.h"
 
+#define buffprint(M, ...) buffend += ets_sprintf( buffend, M, ##__VA_ARGS__)
+
 extern enum date_time_e datetime_display;
+extern uint8_t cache[5];
 
 
 int ICACHE_FLASH_ATTR CustomCommand(char *buffer, int retsize, char *pusrdata, unsigned short len)
@@ -105,7 +108,6 @@ int ICACHE_FLASH_ATTR CustomCommand(char *buffer, int retsize, char *pusrdata, u
 		do_segment(SEG_G, 2, pusrdata[1] == 'X' ? 1 : 0);
 		return buffend - buffer;
 		break;
-
 	// set flip7seg
 	case 'f':
 	case 'F':
@@ -130,3 +132,44 @@ int ICACHE_FLASH_ATTR CustomCommand(char *buffer, int retsize, char *pusrdata, u
 	} //switch
 	return -1;
 }
+
+int ICACHE_FLASH_ATTR cmd_SevenSeg(char * buffer, int retsize, char * pusrdata, char * buffend)
+{
+	printf(">>> cmd_SevenSeg: %c %c\n",pusrdata[0],pusrdata[1]);
+	int i;
+	switch( pusrdata[1] ) {
+		
+		//Name (set name?)
+		/*
+		case 'n': case 'N':
+		{
+			char * dn = ParamCaptureAndAdvance();
+			int ll = ets_strlen( dn );
+			if( ll >= MAX_DEVICE_NAME ) ll = MAX_DEVICE_NAME-1;
+			for( i = 0; i < ll; i++ ) {
+				char ci = *(dn++);
+				if( ci >= 33 && ci <= 'z' )
+					SETTINGS.DeviceName[i] = ci;
+			}
+			SETTINGS.DeviceName[i] = 0;
+			buffprint( "\r\n" );
+			return buffend - buffer;
+		}*/
+
+
+		// General Info
+		case 'i': //7i
+		default:{
+			time_t tim = (time_t)sntp_get_current_timestamp();
+			struct tm *t = sntp_localtime(&tim);
+			buffprint( "I" );
+			// I/t NoSegments \t cahe(0x01020304) \t DateString
+			buffprint(
+				"\t%d" 	"\t0x%02x%02x%02x%02x"				"\t%s",
+				4, 		cache[4],cache[3],cache[2],cache[1], sntp_asctime(t)
+			);
+		break;
+		}
+	}
+	return buffend - buffer;
+} // END: cmd_SevenSeg(...)

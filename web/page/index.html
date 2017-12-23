@@ -1,6 +1,8 @@
 <html><head>
 
 <title>{{PAGE_TITLE}}</title>
+<script language="javascript" type="text/javascript" src="jquery-2.1.4.min.js.gz"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
 {{PAGE_SCRIPT}}
 <meta charset="UTF-8">
 <style>
@@ -11,11 +13,12 @@ td { vertical-align: top; }
 #SystemMessage { position: fixed; top: 5px; background-color: DarkSlateBlue; color: #ffffff; left: 5px; display:none; }
 .dragandrophandler { border:2px dotted #0B85A1; color:#92AAB0;vertical-align:middle;padding:10px 10px 10 10px;margin-bottom:10px;font-size:200%;}
 .unsaved-input { border: 2px solid pink; border-radius: 7px; }
+.sevenSegContainer{ display: inline-block; background-color: Black; border-radius: 5px; margin-left: 18px; margin-right: 18px; }
+.sevenSegArray4{ padding: 0.25em; height: 50px; width: 160px; }
 </style>
 
 </head><body>
 <h2>{{PAGE_HEADING}}</h2><hr>
-
 
 <table id="MainMenu"><tbody>
 
@@ -26,9 +29,8 @@ td { vertical-align: top; }
 
 </tbody></table>
 
-
 <font size=-2>
-<p>Copyright (C) 2015-2016 &lt&gt&lt Charles Lohr, See LICENSE file for more info.</p>
+<p>Copyright (C) 2015-2016 &lt&gt&lt Charles Lohr, 2017 Bjoern Riemer See LICENSE file for more info.</p>
 <p><a href={{PROJECT_URL}}><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAACxMAAAsTAQCanBgAAAEBSURBVCgVBcHdSpMBAAbgZ4M+rXuQIkRlMJnHHS22LJh4F57uRpShorsAb8DORkaLEDzVgUoQHrh+xBMhEH8+5uvzAFDX99OjW6f66gDAlF0TQ10dHV1DEzumAApDvzUBQNMfXxVA39iMVwBg2mtjfSrqjrVcGdlz6K2KCw1r3ntpoMGm71gSERER0cQPvapln9EGANDGvhYPVjASERERcYlV/6siKAAAFIinqgtzGAEAOMGcMRuO0HArIiLiwTscWaem9BHztpyL+GXXIj4pLcC2a7PgUMQpeOOvLaBw4MoH3IgIWv4ZKACmbSt9cy8ivij1vAAAajacuXPnzLoawDOHTGouVu63twAAAABJRU5ErkJggg==" style="height: 1em;" alt="github-logo">
 {{PROJECT_NAME}}
 </a> {{VERSSTR}}</p>
