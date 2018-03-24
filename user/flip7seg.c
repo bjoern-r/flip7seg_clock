@@ -27,34 +27,20 @@ void ICACHE_FLASH_ATTR flip7seg_init()
     f7_bitdelayL_us = 0;
     f7_latchdelay_us = 5*1000;
 
-    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_GPIO0);
-    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);
+    PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO4_U);
+
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
-    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO9);
-    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_GPIO10);
-    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO14);
+    PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO5_U);
     
-    //	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_I2SO_WS);
-    //	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_I2SO_BCK);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U,FUNC_GPIO12);
+    PIN_PULLUP_DIS(PERIPHS_IO_MUX_MTDI_U);
 
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
+    GPIO_OUTPUT_SET(GPIO_ID_PIN(latchPinNo), 1);
+    GPIO_OUTPUT_SET(GPIO_ID_PIN(dataPinNo), 1);
+    GPIO_OUTPUT_SET(GPIO_ID_PIN(clockPinNo), 1);
+    gpio_output_set(0, (1<<latchPinNo)|(1<<dataPinNo)|(1<<clockPinNo), (1<<latchPinNo)|(1<<dataPinNo)|(1<<clockPinNo), 0); //set low and enable
 
-    //Set GPIO2 low
-    gpio_output_set(0, BIT2, BIT2, 0);
-
-    //GPIO_OUTPUT_SET(GPIO_ID_PIN(0), 0);
-    GPIO_OUTPUT_SET(GPIO_ID_PIN(4), 0);
-    GPIO_OUTPUT_SET(GPIO_ID_PIN(5), 0);
-    gpio_output_set(0, (1<<latchPinNo)|(1<<dataPinNo)|(1<<clockPinNo), 0, 0); //set low
-
-    //pinMode(13, OUTPUT); //LED
-    //pinMode(latchPin, OUTPUT);
-    //pinMode(clockPin, OUTPUT);
-    //pinMode(dataPin, OUTPUT);
-    //digitalWrite(latchPin, LOW);
-
-    //do_shift_latch(0b00000000);
 }
 
 void ICACHE_FLASH_ATTR shiftOut(const uint8_t dataPin, const uint8_t clockPin, uint8_t data) {

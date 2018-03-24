@@ -14,8 +14,26 @@
 
 #define dataPinNo  5
 #define clockPinNo 4
-#define latchPinNo 2
+#define latchPinNo 12
 
+/*
+ * WEMOS D1 mini Lite
+esp82   Print
+A0      A0	Analog input, max 3.3V input
+GPIO16  D0	IO
+GPIO5   D1	IO, SCL (data)
+GPIO4   D2	IO, SDA (clock)
+GPIO0   D3	IO, 10k Pull-up -- push to 1 for FLASH boot
+GPIO2   D4	IO, 10k Pull-up, BUILTIN_LED
+GPIO14  D5	IO, SCK (latch)
+GPIO12  D6	IO, MISO
+GPIO13  D7	IO, MOSI
+GPIO15  D8	IO, 10k Pull-down, SS -- pull to 0 for FLASH boot
+ * NodeMCU - SP12E DevKit v2.1
+5 
+4 
+2 
+*/
 
 #define DR _BV(0)
 #define RA0 _BV(1)
