@@ -52,7 +52,7 @@ int ICACHE_FLASH_ATTR CustomCommand(char *buffer, int retsize, char *pusrdata, u
 		break;
 	// start ntp
 	case 'N':
-		start_ntp_clock();
+		start_ntp_clock(100);
 		buffend += ets_sprintf(buffend, "startNTP()\n");
 		return buffend - buffer;
 		break;
@@ -89,6 +89,10 @@ int ICACHE_FLASH_ATTR CustomCommand(char *buffer, int retsize, char *pusrdata, u
 				case 'n':
 					clock_force_next(SHOW_HH_M0, S_FLAG_FORCE_MIN);
 					buffend += ets_sprintf(buffend, "HH-M_\n");
+					break;
+				case 'i':
+					clock_force_next(SHOW_IP1, S_FLAG_IGNORE);
+					buffend += ets_sprintf(buffend, "IP\n");
 					break;
 				case 't':
 				default:
@@ -127,6 +131,19 @@ int ICACHE_FLASH_ATTR CustomCommand(char *buffer, int retsize, char *pusrdata, u
 		{
 			buffend += ets_sprintf(buffend, "need 4 or 1 args");
 			return buffend - buffer;
+		}
+		break;
+	case 'z':{ //set timezone
+		if (len == 3){
+			char tz = pusrdata[2];
+			if (tz>='0' && tz<='9'){
+				buffend += ets_sprintf(buffend, "set GMT ofs %d\n",tz-'0');
+				//sntp_set_timezone(tz-'0');
+				clock_set_timezone(tz-'0');
+				start_ntp_clock(100);
+				return buffend - buffer;
+			}
+		}
 		}
 		break;
 	} //switch

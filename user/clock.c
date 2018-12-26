@@ -11,17 +11,18 @@ char * ntp_servers[] = {
     "2.europe.pool.ntp.org",
     "time-c.nist.gov"
 };
-#define NTP_OFFSET 1 // GMT
+sint8 gmt_offset = 2;
+//#define NTP_OFFSET 1 // GMT
 
 enum date_time_e datetime_display = SHOW_HH_MM;
 struct clock_next_t{
 	unsigned int wait_ticks;
 	enum date_time_e next;
     unsigned int flags;
-}d_next = {0, SHOW_HH_MM, 0};
+}d_next = {2, SHOW_IP1, 0};
 
 
-void ICACHE_FLASH_ATTR start_ntp_clock()
+void ICACHE_FLASH_ATTR start_ntp_clock(sint8 ntp_offset)
 {
     int i;
     uint32 tm = 0;
@@ -34,8 +35,19 @@ void ICACHE_FLASH_ATTR start_ntp_clock()
         sntp_setservername(i, ntp_servers[i]);
         printf("sntp server: %s\n", ntp_servers[i]);
     }
-    sntp_set_timezone(NTP_OFFSET);
+    if (ntp_offset != 100){
+        gmt_offset = ntp_offset;
+    }
+    sntp_set_timezone(gmt_offset);
     sntp_init();
+}
+
+void ICACHE_FLASH_ATTR clock_set_timezone(sint8 ntp_offset)
+{
+    if (ntp_offset != 100){
+        gmt_offset = ntp_offset;
+        sntp_set_timezone(gmt_offset);
+    }
 }
 
 int ICACHE_FLASH_ATTR clock_update_7seg(enum date_time_e show_what)
@@ -44,6 +56,8 @@ int ICACHE_FLASH_ATTR clock_update_7seg(enum date_time_e show_what)
     struct tm *t;
     char buf[5];
     char *dates=0;
+    static uint32_t ip;
+
     if (tim > 0)
     {
         t = sntp_localtime(&tim);
@@ -78,6 +92,22 @@ int ICACHE_FLASH_ATTR clock_update_7seg(enum date_time_e show_what)
                 break;
             case SHOW_DAY_NAME:
                 do_display_text(dates,24,0);
+                break;
+            case SHOW_IP4:
+                ip = GetCurrentIP();
+                do_number_to_7seg((ip>>(3*8)&0x00FF));
+                break;
+            case SHOW_IP3:
+                ip = GetCurrentIP();
+                do_number_to_7seg((ip>>(2*8)&0x00FF));
+                break;
+            case SHOW_IP2:
+                ip = GetCurrentIP();
+                do_number_to_7seg((ip>>(1*8)&0x00FF));
+                break;
+            case SHOW_IP1:
+                ip = GetCurrentIP();
+                do_number_to_7seg((ip&0x00FF));
                 break;
             default:
                 printf("err: unknown what\n");
@@ -130,6 +160,21 @@ int ICACHE_FLASH_ATTR clock_select_next(struct clock_next_t* dat){
             dat->next=SHOW_YYYY;
             dat->wait_ticks=4;
             break;
+        case SHOW_IP1:
+            dat->wait_ticks=0;
+            dat->next=SHOW_IP2;
+            break;
+        case SHOW_IP2:
+            dat->wait_ticks=0;
+            dat->next=SHOW_IP3;
+            break;
+        case SHOW_IP3:
+            dat->wait_ticks=0;
+            dat->next=SHOW_IP4;
+            break;
+        case SHOW_IP4:
+            dat->wait_ticks=1;
+            dat->next=SHOW_HH_MM;
             break;
         case SHOW_MM_SS:
         case SHOW_NOP:

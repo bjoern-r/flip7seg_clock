@@ -112,14 +112,14 @@ void user_init(void)
 		while(1) { uart0_sendStr( "\r\nFAULT\r\n" ); }
 	}
 
-	start_ntp_clock();
+	start_ntp_clock(100); // 100 means use default timezone from clock.h
 
 	CSInit();
 
-	SetServiceName( "espcom" );
+	SetServiceName( "esp7seg" );
 	AddMDNSName(    "esp82xx" );
 	//AddMDNSName(    "espcom" );
-	AddMDNSService( "_http._tcp",    "An ESP82XX Webserver", WEB_PORT );
+	AddMDNSService( "_http._tcp",    "An esp7seg Webserver", WEB_PORT );
 	//AddMDNSService( "_espcom._udp",  "ESP82XX Comunication", COM_PORT );
 	AddMDNSService( "_esp82xx._udp", "ESP82XX Backend",      BACKEND_PORT );
 
